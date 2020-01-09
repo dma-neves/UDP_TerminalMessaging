@@ -21,5 +21,5 @@
       - To run the client use `./client.out serverHostName serverPort clientPort`
       
 **Notes**
-  - If your running both programs on the same machine user localhost as the hostName
+  - If your running both programs on the same machine use localhost as the hostName
   - All the clients (and server) running on the same machine must be initialized with different ports 
