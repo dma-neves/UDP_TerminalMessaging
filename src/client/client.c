@@ -21,19 +21,6 @@ void scan(char* str)
 	if(str[0] != '\n') str[strlen(str)-1] = (char)0;
 }
 
-void printChat(Chat* chat)
-{
-    Node* node = chat->messages.head;
-    while(node != NULL)
-    {
-        Message* message = (Message*)node->element;
-        printf("(%s) %s\n\n", message->sender, message->msg);
-
-        node = node->next;
-    }
-    printf("\n");
-}
-
 void login()
 {
 	char name[MAX_STR_SIZE];
@@ -182,7 +169,7 @@ void client(char* serverHostName, int serverPort, int clientPort)
 			if(!strcmp(cmd, "help"))
 			{
 				printf("<users> - view existing users\n");
-				//printf("<remove> - remove current user\n");
+				printf("<remove> - remove current user\n");
 				printf("<send> - send message\n");
 				printf("<view> - view messages\n");
 				printf("<logout>\n");
@@ -199,10 +186,10 @@ void client(char* serverHostName, int serverPort, int clientPort)
 				med_users(users);
 				printf("%s\n", users);
 			}
-			/*else if(!strcmp(cmd, "remove"))
+			else if(!strcmp(cmd, "remove"))
 			{
 				removeUser();
-			}*/
+			}
 			else if(!strcmp(cmd, "view"))
 			{
 				viewMessages();

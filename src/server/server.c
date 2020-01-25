@@ -11,7 +11,7 @@
 #include "chat/user.h"
 #include "communication/requests.h"
 #include "communication/server_mediator.h"
-#include "../global.h"
+#include "global.h"
 
 #define MAX_USERS 20
 
@@ -63,12 +63,15 @@ Chat* getChat(char* name_0, char* name_1)
 {
 	if(strcmp(name_0, name_1) == 0) return NULL;
 
-	User* user_0 = (User*) getUserNode(name_0)->element;
-	User* user_1 = (User*) getUserNode(name_1)->element;
+	Node* node = getUserNode(name_0);
+	if(node == NULL) return NULL;
+	User* user_0 = (User*) node->element;
 
-	if(user_0 == NULL || user_1 == NULL) return NULL;
+	node = getUserNode(name_1);
+	if(node == NULL) return NULL;
+	User* user_1 = (User*) node->element;
 
-	Node* node = chats.head;
+	node = chats.head;
 	while(node != NULL)
 	{
 		Chat* chat = (Chat*)node->element;
@@ -88,8 +91,10 @@ Chat* getChat(char* name_0, char* name_1)
 
 int login(char* name, char* password)
 {
-	User* user = (User*)( getUserNode(name) )->element;
-	if(user == NULL) return INVALID_SPECIFICATIONS;
+	Node* node = getUserNode(name);
+	if(node == NULL) return INVALID_SPECIFICATIONS;
+
+	User* user = node->element;
 
 	if(strcmp(user->pass, password) == 0) return VALID;
 
@@ -119,10 +124,24 @@ void getUserNames(char* userNames)
 
 int removeUser(char* name)
 {
-	Node* node = getUserNode(name);
-	if(node == NULL) return INVALID_SPECIFICATIONS;
+	Node* node = chats.head;
+	while(node != NULL)
+	{
+		Chat* chat = (Chat*)node->element;
+		Node* nextNode = node->next;
 
+		if(strcmp(chat->user[0]->name, name) == 0 || strcmp(chat->user[1]->name, name) == 0)
+		{
+			free( rem(&chats, node) );
+		}
+
+		node = nextNode;
+	}
+
+	node = getUserNode(name);
+	if(node == NULL) return INVALID_SPECIFICATIONS;
 	free( rem(&users, node) );
+
 	return VALID;
 }
 
