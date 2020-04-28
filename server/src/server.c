@@ -14,6 +14,8 @@
 #include "global.h"
 
 #define MAX_USERS 20
+#define USER_DATA_FILE "../../data/user_data"
+#define CHAT_DATA_FILE "../../data/chat_data"
 
 char* itoa(char* str, int num) { sprintf(str, "%d", num); return str; }
 
@@ -176,8 +178,8 @@ int sendMessage(char* sender, char* receiver, char* msg)
 
 void saveServerData()
 {
-	saveOnDisk("user_data", &users);
-	saveOnDisk("chat_data", &chats);
+	saveOnDisk(USER_DATA_FILE, &users);
+	saveOnDisk(CHAT_DATA_FILE, &chats);
 }
 
 void clearServerData()
@@ -198,8 +200,8 @@ void loadServerData()
 {
 	clearServerData();
 
-	loadFromDisk("user_data", &users);
-	loadFromDisk("chat_data", &chats);
+	loadFromDisk(USER_DATA_FILE, &users);
+	loadFromDisk(CHAT_DATA_FILE, &chats);
 }
 
 void server(int port)
