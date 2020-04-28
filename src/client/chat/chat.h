@@ -19,6 +19,8 @@ typedef struct _Chat
 
 void initChat(Chat* chat, User* user[2]);
 
+void clearChat(Chat* chat);
+
 void addMessage(Chat* chat, char* sender, char msg[MAX_STR_SIZE]);
 
 int isChat(Chat* chat, User* user_0, User* user_1);

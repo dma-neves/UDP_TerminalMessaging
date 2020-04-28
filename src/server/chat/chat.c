@@ -7,7 +7,12 @@ void initChat(Chat* chat, User* user[2])
 {
     chat->user[0] = user[0];
     chat->user[1] = user[1];
-    initList( &(chat->messages) );
+    initList( &(chat->messages), sizeof(Chat) );
+}
+
+void clearChat(Chat* chat)
+{
+    clearList(&chat->messages);
 }
 
 void addMessage(Chat* chat, char* sender, char msg[MAX_STR_SIZE])

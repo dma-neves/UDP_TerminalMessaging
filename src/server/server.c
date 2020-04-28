@@ -174,10 +174,38 @@ int sendMessage(char* sender, char* receiver, char* msg)
 	return VALID;
 }
 
+void saveServerData()
+{
+	saveOnDisk("user_data", &users);
+	saveOnDisk("chat_data", &chats);
+}
+
+void clearServerData()
+{
+	clearList(&users);
+
+	Node* curNode = chats.head;
+	while(curNode != NULL)
+	{
+		Chat* chat = (Chat*)curNode->element;
+		clearChat(chat);
+	}
+
+	clearList(&chats);
+}
+
+void loadServerData()
+{
+	clearServerData();
+
+	loadFromDisk("user_data", &users);
+	loadFromDisk("chat_data", &chats);
+}
+
 void server(int port)
 {
-	initList(&users);
-	initList(&chats);
+	initList(&users, sizeof(User));
+	initList(&chats, sizeof(Chat));
 
 	initServerMediator(port);
 
@@ -275,6 +303,9 @@ void server(int port)
 
 		debug();
 	}
+
+	clearList(&users);
+	clearList(&chats);
 }
 
 int main( int argc, char *argv[])

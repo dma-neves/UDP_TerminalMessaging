@@ -1,12 +1,16 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <string.h>
 
 #include "list.h"
 
-void initList(List* list)
+void initList(List* list, size_t elemSize)
 {
     list->head = NULL;
     list->tail = NULL;
+    list->elemSize = elemSize;
 }
 
 void add(List* list, void* element)
@@ -62,4 +66,49 @@ void* rem(List* list, Node* node)
     void* elem =  node->element;
     free(node);
     return elem;
+}
+
+void clearList(List* list)
+{
+    Node* curNode = list->head;
+    while(curNode != NULL)
+    {
+        free(curNode->element);
+        Node* aux = curNode;
+        curNode = curNode->next;
+        free(aux);
+    }
+
+    list->head = NULL;
+    list->tail = NULL;
+}
+
+void saveOnDisk(char* filename, List* list)
+{
+    int fd = open(filename, O_WRONLY | O_CREAT/*, 0644*/);
+    write(fd, &list->elemSize, sizeof(size_t));
+    
+    Node* curNode = list->head;
+    for(; curNode != NULL; curNode = curNode->next)
+    {
+        write(fd, curNode->element, list->elemSize);
+    }
+
+    close(fd);
+}
+
+void loadFromDisk(char* filename, List* list)
+{
+    int fd = open(filename, O_RDONLY);
+    read(fd, &list->elemSize, sizeof(size_t));
+
+    void* element = malloc(list->elemSize);
+    while(read(fd, element, list->elemSize) != 0)
+    {
+        add(list, element);
+        element = malloc(list->elemSize);
+    }
+
+    free(element);
+    close(fd);
 }
