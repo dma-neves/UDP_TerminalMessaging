@@ -85,7 +85,8 @@ void clearList(List* list)
 
 void saveOnDisk(char* filename, List* list)
 {
-    int fd = open(filename, O_WRONLY | O_CREAT/*, 0644*/);
+    //int fd = open(filename, O_WRONLY | O_CREAT, 0644);
+    int fd = open(filename, O_WRONLY | O_CREAT, 0777);
     write(fd, &list->elemSize, sizeof(size_t));
     
     Node* curNode = list->head;

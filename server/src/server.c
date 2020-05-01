@@ -1,50 +1,50 @@
 #include <stdlib.h>
-#include <sys/stat.h>
 #include <string.h>
 #include <stdio.h>
-#include <sys/types.h>
-#include <unistd.h>
-#include <sys/wait.h>
 
-#include "util/list.h"
-#include "chat/chat.h"
+#include "server.h"
+
 #include "chat/user.h"
 #include "communication/requests.h"
-#include "communication/server_mediator.h"
 #include "global.h"
 
 #define MAX_USERS 20
-#define USER_DATA_FILE "../../data/user_data"
-#define CHAT_DATA_FILE "../../data/chat_data"
+#define USER_DATA_FILE "../data/user_data"
+#define CHAT_DATA_FILE "../data/chat_data"
 
-char* itoa(char* str, int num) { sprintf(str, "%d", num); return str; }
-
-char buf[MAX_STR_SIZE];
 List users;
 List chats;
 
-void debug()
+void initServer()
 {
-	printf("\n<DEBUG>\n");
-	printf("users: \n");
+	initList(&users, sizeof(User));
+	initList(&chats, sizeof(Chat));
+}
+
+char* getDebugInfo(char* debugInfo)
+{
+	sprintf(debugInfo, "\n<DEBUG>\n");
+	sprintf(debugInfo + strlen(debugInfo), "users: \n");
 	Node* node = users.head;
 	while(node != NULL)
 	{
 		User* user = (User*)node->element;
-		printf("%s\n", user->name);
+		sprintf(debugInfo + strlen(debugInfo), "%s\n", user->name);
 		node = node->next;
 	}
-	printf("\n");
+	sprintf(debugInfo + strlen(debugInfo), "\n");
 
-	printf("chats: \n");
+	sprintf(debugInfo + strlen(debugInfo), "chats: \n");
 	node = chats.head;
 	while(node != NULL)
 	{
 		Chat* chat = (Chat*)node->element;
-		printf("chat between %s and %s\n", chat->user[0]->name, chat->user[1]->name);
+		sprintf(debugInfo + strlen(debugInfo), "chat between %s and %s\n", chat->user[0]->name, chat->user[1]->name);
 		node = node->next;
 	}
-	printf("\n");
+	sprintf(debugInfo + strlen(debugInfo), "\n");
+
+	return debugInfo;
 }
 
 Node* getUserNode(char* name)
@@ -93,6 +93,8 @@ Chat* getChat(char* name_0, char* name_1)
 
 int login(char* name, char* password)
 {
+	if(!strcmp(name, "admin") && !strcmp(password, ADMIN_PASSWORD)) return VALID;
+
 	Node* node = getUserNode(name);
 	if(node == NULL) return INVALID_SPECIFICATIONS;
 
@@ -170,16 +172,16 @@ int sendMessage(char* sender, char* receiver, char* msg)
 	Chat* chat = getChat(sender, receiver);
 	if(chat == NULL) return INVALID_SPECIFICATIONS;
 
-	printf("New message between %s & %s:\n(%s) %s\n\n", sender, receiver, sender, msg);
 	addMessage(chat, sender, msg);
-
 	return VALID;
 }
 
 void saveServerData()
 {
 	saveOnDisk(USER_DATA_FILE, &users);
-	saveOnDisk(CHAT_DATA_FILE, &chats);
+	saveChats();
+
+	printf("<DATA saved>\n\n");
 }
 
 void clearServerData()
@@ -194,6 +196,8 @@ void clearServerData()
 	}
 
 	clearList(&chats);
+
+	printf("<DATA cleared>\n\n");
 }
 
 void loadServerData()
@@ -201,130 +205,17 @@ void loadServerData()
 	clearServerData();
 
 	loadFromDisk(USER_DATA_FILE, &users);
-	loadFromDisk(CHAT_DATA_FILE, &chats);
+	loadChats();
+
+	printf("<DATA loaded>\n\n");
 }
 
-void server(int port)
+void saveChats()
 {
-	initList(&users, sizeof(User));
-	initList(&chats, sizeof(Chat));
 
-	initServerMediator(port);
-
-	while(1)
-	{
-		int request = readRequest();
-
-		switch(request)
-		{
-			case LOGIN:
-			{
-				printf("<LOGIN>\n");
-				char name[MAX_STR_SIZE];
-				char pass[MAX_STR_SIZE];
-				strcpy(name, getNextSpecification());
-				strcpy(pass, getNextSpecification());
-
-				sendResponse(itoa(buf, login(name, pass) ));
-				break;
-			}
-
-			case REGISTER:
-			{
-				printf("<REGISTER>\n");
-				char name[MAX_STR_SIZE];
-				char pass[MAX_STR_SIZE];
-				strcpy(name, getNextSpecification());
-				strcpy(pass, getNextSpecification());
-
-				regist(name, pass);
-				sendResponse(itoa(buf, VALID));
-				break;
-			}
-			
-			case USERS:
-			{
-				printf("<USERS>\n");
-				char users[MAX_STR_SIZE];
-
-				getUserNames(users);
-				sendResponse(users);
-				break;
-			}
-
-			case REMOVE:
-			{
-				printf("<REMOVE>\n");
-				char name[MAX_STR_SIZE];
-				strcpy(name, getNextSpecification());
-
-				sendResponse(itoa( buf, removeUser(name) ));
-				break;
-			}
-
-			case VIEW:
-			{
-				printf("<VIEW>\n");
-				char name_0[MAX_STR_SIZE];
-				char name_1[MAX_STR_SIZE];
-				strcpy(name_0, getNextSpecification());
-				strcpy(name_1, getNextSpecification());
-
-				char messages[MAX_STR_SIZE];
-				if(getMessages(name_0, name_1, messages) == INVALID_SPECIFICATIONS)
-				{
-					sendResponse(itoa(buf, INVALID_SPECIFICATIONS));
-				}
-				else
-				{
-					sendResponse(messages);
-				}
-
-				break;
-			}
-
-			case SEND:
-			{
-				printf("<SEND>\n");
-				char sender[MAX_STR_SIZE];
-				char receiver[MAX_STR_SIZE];
-				char msg[MAX_STR_SIZE];
-				strcpy(sender, getNextSpecification());
-				strcpy(receiver, getNextSpecification());
-				strcpy(msg, getNextSpecification());
-
-				sendResponse(itoa( buf, sendMessage(sender, receiver, msg) ));
-				break;
-			}
-
-			default:
-				printf("Error: Invalid request\n");
-				sendResponse(itoa(buf, INVALID_REQUEST));
-				break;
-		}
-
-		debug();
-	}
-
-	clearList(&users);
-	clearList(&chats);
 }
 
-int main( int argc, char *argv[])
+void loadChats()
 {
-	int port;
-	
-	if(argc == 2)
-	{
-		port = atoi(argv[1]);
-	}
-	else
-	{
-		printf("Usage: %s port\n", argv[0]);
-		return 1;
-	}
 
-	server(port);
-	return 0;
 }
-

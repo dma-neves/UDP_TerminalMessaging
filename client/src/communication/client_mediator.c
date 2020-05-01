@@ -95,3 +95,22 @@ int med_sendMessage(char* sender, char* receiver, char* msg)
 	sprintf(message, "%d-%s-%s-%s", SEND, sender, receiver, msg);
 	return sendRequest(message);
 }
+
+int med_viewDebug(char* adminPass, char* debug_message)
+{
+    char message[MAX_STR_SIZE];
+	sprintf(message, "%d-%s", DEBUG, adminPass);
+
+	int ret = sendRequest(message);
+	if(ret == VALID) strcpy(debug_message, message);
+
+	return ret;
+}
+
+int med_dataOp(char* adminPass, char* op)
+{
+	char message[MAX_STR_SIZE];
+	sprintf(message, "%d-%s-%s", DATA_OP, adminPass, op);
+
+	return sendRequest(message);
+}

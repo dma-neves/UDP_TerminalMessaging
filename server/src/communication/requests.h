@@ -12,7 +12,9 @@ typedef enum
     USERS,
     REMOVE,
     VIEW,
-    SEND
-} Requests;
+    SEND,
+    DEBUG,
+    DATA_OP
+} Request;
 
 #endif

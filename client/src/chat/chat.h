@@ -7,7 +7,7 @@
 
 typedef struct _Message
 {
-    char sender[MAX_STR_SIZE];
+    char sender[MAX_SMALL_STR_SIZE];
     char msg[MAX_STR_SIZE];
 } Message;
 
@@ -18,11 +18,8 @@ typedef struct _Chat
 } Chat;
 
 void initChat(Chat* chat, User* user[2]);
-
 void clearChat(Chat* chat);
-
 void addMessage(Chat* chat, char* sender, char msg[MAX_STR_SIZE]);
-
 int isChat(Chat* chat, User* user_0, User* user_1);
 
 #endif
