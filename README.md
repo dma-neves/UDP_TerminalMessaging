@@ -6,7 +6,7 @@
   any other machine, on the same network given the hostname (or ip address) and port of the machine running 
   the server, is able to run the client program. From the client program it is possible to register a user/account
   and send and receive messages from other users registered on the platform. 
-  - The admin user (username: admin password: admin) has the abillity to request the server to save or load all data
+  - The admin user (username: **admin** password: **admin**) has the abillity to request the server to save or load all data
   to/from disk and to view debug infromation
 
 **Requirements:**
