@@ -9,11 +9,22 @@
 #include "global.h"
 
 #define MAX_USERS 20
-#define USER_DATA_FILE "../data/user_data"
-#define CHAT_DATA_FILE "../data/chat_data"
+#define REMOVE_ALL_DATA_FILES "rm ../data/*.ldata"
+#define USER_DATA_FILE "../data/user_data.ldata"
+#define CHAT_USERS_DATA_FILE "../data/chat_users_data.ldata"
+#define CHAT_MESSAGES_DATA_FILE "../data/chat_messages	_data_%d.ldata"
+
+typedef struct _ChatUsers
+{ 
+	char name_a[MAX_SMALL_STR_SIZE];
+	char name_b[MAX_SMALL_STR_SIZE];
+} ChatUsers;
 
 List users;
 List chats;
+
+void saveChats();
+void loadChats();
 
 void initServer()
 {
@@ -26,21 +37,20 @@ char* getDebugInfo(char* debugInfo)
 	sprintf(debugInfo, "\n<DEBUG>\n");
 	sprintf(debugInfo + strlen(debugInfo), "users: \n");
 	Node* node = users.head;
-	while(node != NULL)
+	for(; node != NULL; node = node->next)
 	{
 		User* user = (User*)node->element;
 		sprintf(debugInfo + strlen(debugInfo), "%s\n", user->name);
-		node = node->next;
 	}
 	sprintf(debugInfo + strlen(debugInfo), "\n");
 
 	sprintf(debugInfo + strlen(debugInfo), "chats: \n");
 	node = chats.head;
-	while(node != NULL)
+	for(; node != NULL; node = node->next)
 	{
 		Chat* chat = (Chat*)node->element;
 		sprintf(debugInfo + strlen(debugInfo), "chat between %s and %s\n", chat->user[0]->name, chat->user[1]->name);
-		node = node->next;
+		
 	}
 	sprintf(debugInfo + strlen(debugInfo), "\n");
 
@@ -50,12 +60,10 @@ char* getDebugInfo(char* debugInfo)
 Node* getUserNode(char* name)
 {
 	Node* node = users.head;
-	while(node != NULL)
+	for(; node != NULL; node = node->next)
 	{
 		User* user = (User*)node->element;
 		if(strcmp(user->name, name) == 0) return node;
-
-		node = node->next;
 	}
 
 	return NULL;
@@ -74,13 +82,11 @@ Chat* getChat(char* name_0, char* name_1)
 	User* user_1 = (User*) node->element;
 
 	node = chats.head;
-	while(node != NULL)
+	for(; node != NULL; node = node->next)
 	{
 		Chat* chat = (Chat*)node->element;
 
 		if(isChat(chat, user_0, user_1)) return chat;
-
-		node = node->next;
 	}
 
 	Chat* chat = malloc(sizeof(Chat));
@@ -117,12 +123,11 @@ void getUserNames(char* userNames)
 {
 	userNames[0] = '\0';
 	Node* node = users.head;
-	while(node != NULL)
+	for(; node != NULL; node = node->next)
 	{
 		User* user = (User*)node->element;
 		sprintf(userNames + strlen(userNames), "%s", user->name);
 		sprintf(userNames + strlen(userNames), "\n");
-		node = node->next;
 	}
 }
 
@@ -157,11 +162,10 @@ int getMessages(char* name_0, char* name_1, char* messages)
 	messages[0] = '\0';
 	Node* node = chat->messages.head;
 	int i = 0;
-	while(node != NULL)
+	for(; node != NULL; node = node->next)
 	{	
 		Message* msg = (Message*)node->element;
 		sprintf(messages + strlen(messages), "(%s) %s\n", msg->sender, msg->msg);
-		node = node->next;
 	}
 
 	return VALID;
@@ -176,8 +180,14 @@ int sendMessage(char* sender, char* receiver, char* msg)
 	return VALID;
 }
 
+void clearDiskData()
+{
+	system(REMOVE_ALL_DATA_FILES);
+}
+
 void saveServerData()
 {
+	clearDiskData();
 	saveOnDisk(USER_DATA_FILE, &users);
 	saveChats();
 
@@ -188,10 +198,10 @@ void clearServerData()
 {
 	clearList(&users);
 
-	Node* curNode = chats.head;
-	while(curNode != NULL)
+	Node* node = chats.head;
+	for(; node != NULL; node = node->next)
 	{
-		Chat* chat = (Chat*)curNode->element;
+		Chat* chat = (Chat*)node->element;
 		clearChat(chat);
 	}
 
@@ -212,10 +222,53 @@ void loadServerData()
 
 void saveChats()
 {
+	List chatUsers;
+	initList(&chatUsers, sizeof(ChatUsers));
 
+
+	int chat_num = 0;
+	Node* node = chats.head;
+	for(; node != NULL; node = node->next)
+	{
+		Chat* chat = (Chat*)node->element;
+
+		ChatUsers* ncu = malloc(sizeof(ChatUsers));
+		strcpy(ncu->name_a, chat->user[0]->name);
+		strcpy(ncu->name_b, chat->user[1]->name);
+		add(&chatUsers, ncu);
+
+		char chatMessagesDataFile[MAX_SMALL_STR_SIZE];
+		sprintf(chatMessagesDataFile, CHAT_MESSAGES_DATA_FILE, chat_num++);
+
+		saveOnDisk(chatMessagesDataFile, &chat->messages);
+	}
+
+	saveOnDisk(CHAT_USERS_DATA_FILE, &chatUsers);
+	clearList(&chatUsers);
 }
 
 void loadChats()
 {
+	List chatUsers;
+	initList(&chatUsers, sizeof(ChatUsers));
+	loadFromDisk(CHAT_USERS_DATA_FILE, &chatUsers);
 
+	int chat_num = 0;
+	Node* node = chatUsers.head;
+	for(; node != NULL; node = node->next)
+	{
+		Chat* nchat = malloc(sizeof(Chat));
+
+		ChatUsers* chatUsers = (ChatUsers*)node->element;
+		nchat->user[0] = getUserNode(chatUsers->name_a)->element;
+		nchat->user[1] = getUserNode(chatUsers->name_b)->element;
+
+		char chatMessagesDataFile[MAX_SMALL_STR_SIZE];
+		sprintf(chatMessagesDataFile, CHAT_MESSAGES_DATA_FILE, chat_num++);
+		loadFromDisk(chatMessagesDataFile, &nchat->messages);
+
+		add(&chats, nchat);
+	}
+
+	clearList(&chatUsers);
 }

@@ -20,4 +20,7 @@ void  saveServerData();
 void  clearServerData();
 void  loadServerData();
 
+
+void clearDiskData();
+
 #endif
